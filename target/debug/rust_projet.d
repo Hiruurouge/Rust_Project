@@ -1,1 +1,1 @@
-/home/cytech/ING/rust_projet/target/debug/rust_projet: /home/cytech/ING/rust_projet/src/main.rs
+/home/cytech/ING/Rust_Project/target/debug/rust_projet: /home/cytech/ING/Rust_Project/src/main.rs
