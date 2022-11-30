@@ -43,7 +43,8 @@ apt-get install telnet
  ```
  (on envoie la commande "ls" au beacone d'ip 10.42.0.1
 ### Liste des commandes disponible
-```exit
+```
+exit
 ``` 
 pour shutdown une socket
 ```
