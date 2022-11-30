@@ -24,7 +24,7 @@ apt-get install telnet
  ```
  cargo run
  ```
- ###utilisation du server
+ ### Utilisation du server
  Dans votre docker (simuler un beacon)
  ```
  telnet votre-ip-local 333
