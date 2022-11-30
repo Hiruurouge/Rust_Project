@@ -1,38 +1,45 @@
-#[macro_use]
-extern crate lazy_static;
-
 use std::thread;
 use std::net::{TcpListener, TcpStream, Shutdown};
-use std::io::{Read, Write, BufRead};
+use std::io::{Read, Write};
 use std::fs::File;
-use std::io::BufReader;
 use std::fs::OpenOptions;
-use std::collections::HashMap;
-use std::sync::Mutex;
 use std::str;
-use std::panic::resume_unwind;
-//static  mut ONLINE:HashMap<String,TcpStream>=HashMap::new();
-lazy_static! {
-    static ref HASHMAP: Mutex<HashMap<String,TcpStream>> = {
-        let mut m = HashMap::new();
-        Mutex::new(m)
-    };
+use std::io::BufReader;
+
+static  mut ONLINE:Vec<(String,TcpStream)>=Vec::new();
+fn is_zero(buf: &[u8]) -> bool {
+    buf.into_iter().all(|&b| b == 0)
 }
 
-fn orders_manage(commands:Vec<&str>){
-   let mut ONLINE =HASHMAP.lock().unwrap();
+unsafe fn orders_manage(commands:Vec<&str>, mut stream:TcpStream){
+   //let mut ONLINE =HASHMAP.lock().expect("unable to lock mutex");
     if commands[0]=="command"{
         let comm =commands[1].replace("target", "");
         let target = commands[2];
         println!("{} {}",comm,target);
-        for key in ONLINE.keys(){
-            if key==target{
-                let mut stream:TcpStream=ONLINE[key].try_clone().unwrap();
-                stream.write(comm.as_bytes());
+        for key in ONLINE.iter() {
+            if key.0==target{
+                let mut target_stream:TcpStream=key.1.try_clone().unwrap();
+                target_stream.write(comm.as_bytes()).unwrap();
+
             }
         }
+    } else if commands[0]=="exit"{
+        let test:String=stream.peer_addr().unwrap().to_string();
+        let client_ip:&str=test.split(":").collect::<Vec<&str>>()[0].clone();
+        for i in 0..ONLINE.len(){
+            if   ONLINE[i].0==client_ip{
+                ONLINE.remove(i);
+                stream.shutdown(Shutdown::Both).expect("shutdown call failed");
+            }
+        }
+    } else if commands[0]=="list"
+    {
+        for key in ONLINE.iter(){
+            stream.write(key.0.as_bytes()).unwrap();
+            stream.write(b"\n").unwrap();
+        }
     }
-
 }
 fn trim_newline(s: &mut String) {
     s.pop();
@@ -54,9 +61,6 @@ fn to_clean_string(buffer: &mut [u8]) -> String {
     return  tmp.to_string();
 }
 
-fn send_message(ip_adress:String, msg:&str){
-
-}
 fn register(stream: &str){
     println!("registering");
     let mut file = OpenOptions::new()
@@ -69,16 +73,29 @@ fn register(stream: &str){
 
   fn handle_client(mut stream: TcpStream) {
     //let mut data = [0u8; 1024]; // using 50 byte buffer*
-      let mut data: Vec<u8> = Vec::with_capacity(127);
-      for _ in 0..128 { data.push(0); }
+      let test:String=stream.peer_addr().unwrap().to_string();
+      let client_ip:&str=test.split(":").collect::<Vec<&str>>()[0].clone();
+      let mut data =[0u8;128];
+      //for _ in 0..128 { data.push(0); }
       //let mut data = Vec::with_capacity(50);
       while match stream.read(&mut data) {
-        Ok(size) => {
-            let mut tmp =str::from_utf8(&data).unwrap();
-            let mut tmp=to_clean_string(&mut data);
-            let orders:Vec<&str>=tmp.split(":").collect();
-            println!("{:?}",orders);
-            orders_manage(orders);
+        Ok(size) => unsafe {
+            if !is_zero(&data){
+                let tmp=to_clean_string(&mut data);
+                let orders:Vec<&str>=tmp.split(":").collect();
+                //println!("{:?}",orders)
+                orders_manage(orders,stream.try_clone().unwrap());
+            } else {
+                for i in 0..ONLINE.len() {
+                    if   ONLINE[i].0==client_ip{
+                        println!("An error occurred, terminating connection with {}", stream.peer_addr().unwrap());
+                        ONLINE.remove(i);
+                        stream.shutdown(Shutdown::Both).expect("shutdown call failed");
+                    }
+                }
+
+            }
+
             true
         },
         Err(_) => {
@@ -86,7 +103,7 @@ fn register(stream: &str){
             stream.shutdown(Shutdown::Both).unwrap();
             false
         }
-    }{stream.flush();}
+    }{}
 
  }
 fn main() {
@@ -102,7 +119,7 @@ fn main() {
                 let file: File = File::open("src/user.txt").expect("error");
                 let mut _buf_reader = BufReader::new(file);
                 let mut contents = String::new();
-                _buf_reader.read_to_string(&mut contents);
+                _buf_reader.read_to_string(&mut contents).unwrap();
                 let _vec = contents.split("\n").collect::<Vec<&str>>();
                 let mut ok:bool=false;
                 for ip in _vec.iter(){
@@ -113,8 +130,12 @@ fn main() {
                     }
                 }
                 if ok==false{register(client_ip.clone())};
-                let mut ONLINE =HASHMAP.lock().unwrap();
-                ONLINE.insert(client_ip.to_string(),stream.try_clone().expect(" Unable to clone stream"));
+                //let mut ONLINE =HASHMAP.lock().expect(" Unable to find stream");
+
+                ONLINE.push((client_ip.to_string(),stream.try_clone().expect(" Unable to clone stream")));
+                println!("{:?}",ONLINE);
+                //drop(ONLINE);
+                //handle_client(stream);
                 thread::spawn(move|| {
                     handle_client(stream)
                 });
