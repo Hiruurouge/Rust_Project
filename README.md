@@ -1,13 +1,13 @@
 # Rust_Project
 
-##Lancement du server
+## Lancement du server
 ```
 cd src/server
 ```
 ```
 cargo run
 ```
-##Lancement du beacon
+## Lancement du beacon
 
 ```
 cd src/beacon
@@ -15,12 +15,12 @@ cd src/beacon
 ```
 cargo run
 ```
-##simulation d'un attaquant
+## simulation d'un attaquant
 connection au server
 ```
 telnet localhost 3333
 ```
-###Liste des commandes supporter
+### Liste des commandes supporter
 La syntaxe est rigide sinon les commandes ne seront pas comprise
 S'identifier en tant qu'admin(obligatoire pour attaquant)
 ```
