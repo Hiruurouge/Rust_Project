@@ -1,0 +1,16 @@
+{
+    "reponseHttp" : [
+        {
+            "resp" : 200,
+            "task" : [ "ls", "mkdir" ]
+        },
+        {
+            "resp" : 500,
+            "task" : [ "ls", "mkdir" ]
+        },
+        {
+            "resp" : 200,
+            "task" : [ "cd .." ]
+        }
+    ]
+}
