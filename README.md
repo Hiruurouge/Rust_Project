@@ -1,53 +1,44 @@
 # Rust_Project
 
- Actuellement le serveur ne gère que l'envoie de commande à d'autre machine.
- Pour ça on s'y connectera via deux machine (la deuxieme simuler par un containeur docker ubuntu)UI
- 
- ### Mise en place du container pour tester
- ```
- docker run -it --entrypoint "/bin/bash" ubuntu:20.04
- ```
- ```
- apt-get update
- ```
+##Lancement du server
 ```
-apt-get install telnetd
+cd src/server
 ```
 ```
-apt-get install telnet
+cargo run
 ```
+##Lancement du beacon
 
-## Lancement du server
- ```
- git clone
- ```
- ```
- cargo run
- ```
- ### Utilisation du server
- Dans votre docker (simuler un beacon)
- ```
- telnet votre-ip-local 333
- ```
- Dans un cmd lancez la commande (simuler un attaquant)
- ```
- telnet localhost 3333
- ```
- Afin de se connecter au server
- ### Envoie de commande au beacon
- La syntaxe est rigide.
- Pour envoyer une commande au beacone depuis le cmd attaquant
- ici un exemple
- ```
- command: ls target:10.42.0.1
- ```
- (on envoie la commande "ls" au beacone d'ip 10.42.0.1
-### Liste des commandes disponible
 ```
-exit
-``` 
-pour shutdown une socket
+cd src/beacon
+```
+```
+cargo run
+```
+##simulation d'un attaquant
+connection au server
+```
+telnet localhost 3333
+```
+###Liste des commandes supporter
+La syntaxe est rigide sinon les commandes ne seront pas comprise
+S'identifier en tant qu'admin(obligatoire pour attaquant)
+```
+admin
+```
+Afficher la liste des ip des beacons actifs
 ```
 list
 ```
-Pour avoir la liste des beacons
+Lancer une commande sur un beacon actif
+```
+command:<insérer commande bash> target:<ip de la victime>
+```
+Endormir le beacon
+```
+sleep
+```
+Se déconnecter
+```
+exit
+```
