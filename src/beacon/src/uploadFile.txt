@@ -1,0 +1,1 @@
+Je suis le fichier que le beacon va upload sur le serveur.

@@ -1,11 +1,15 @@
 use std::process::Command;
-use std::net::TcpStream;
 use std::io::BufReader;
 use std::io::BufRead;
 use std::io::BufWriter;
 use std::io::Write;
 use std::net::SocketAddr;
 use std::{thread, time};
+use std::net::{Shutdown, TcpStream};
+use std::time::{Duration, Instant};
+use std::fs::File;
+use std::io::prelude::*;
+
 
 //use std::os::unix::net::SocketAddr;
 
@@ -70,36 +74,33 @@ fn sleep_beacon(milli_second: u64){
     thread::sleep(ten_millis);
 }
 
+fn upload_file(stream: &mut TcpStream, path: &str) {
+    let mut file = File::open(path).unwrap();
+    
+    let mut buf = [0; 4096];
+    loop {
+        let n = file.read(&mut buf).unwrap();
+        
+        if n == 0 {
+            // reached end of file
+            break;
+        }
+        
+        stream.write_all(&buf[..n]).expect("Error writing in stream");
+    }
+    println!("File sent to server !");
+}
+
 
 fn main(){
-    /*
-    let mut list_result_command:Vec<Resultat> = Vec::new();
-    let tab = ["ls","ps","touch", ""]; // rajouter string::from
-    for i in 0..tab.len(){
-        if tab[i] != ""{
-            let results = execute_commands(tab[i]);
-            list_result_command.push(results);
-        }else{
-            list_result_command.push(create_resultat("null".to_string(),"null".to_string(),"String is empty".to_string()));
-        }
-    }
-    display_resultat(list_result_command);
-    */
-
-    // connect to the server
-    /*
-    if let Ok(TcpStream) = TcpStream::connect("127.0.0.1:3333"){
-        println!("Connecting to the server!");
-    }else{
-        println!("Failed to connect to the server!");
-    }
-    */
-   
-    //let mut list_result_command:Vec<Resultat> = Vec::new();
 
     let addr = "127.0.0.1:3333";
     let mut stream = TcpStream::connect(addr).unwrap();
     println!("Server connecting on addr {}",addr);
+
+    duration_before_shutdown(&mut stream, 60);
+    upload_file(&mut stream, "src/uploadFile.txt");
+
     let mut reader = BufReader::new(&stream);
     let mut writer = &stream;
     let mut line = String::new();
@@ -129,8 +130,6 @@ fn main(){
             //list_result_command.push(results);
         }
     }
-    //reader.read_line(&mut line);
-    //println!("{}",line);
     
 
 }
