@@ -20,6 +20,12 @@ connection au server
 ```
 telnet localhost 3333
 ```
+Une fois connecté tapez:
+```
+admin
+```
+Cela vous authentifiera comme attaquant, afin de vous différenciez des beacon
+
 ### Liste des commandes supportées
 La syntaxe est rigide sinon les commandes ne seront pas comprise
 S'identifier en tant qu'admin(obligatoire pour attaquant)
