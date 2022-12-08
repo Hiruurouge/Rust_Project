@@ -9,6 +9,8 @@ use std::net::{Shutdown, TcpStream};
 use std::time::{Duration, Instant};
 use std::fs::File;
 use std::io::prelude::*;
+use std::env;
+
 
 const TIMEOUT:u64=60;
 //use std::os::unix::net::SocketAddr;
@@ -107,6 +109,8 @@ fn main(){
     let mut reader = BufReader::new(&stream);
     let mut writer = &stream;
     let mut line = String::new();
+    let exe_path = env::current_exe().expect("failed to ....");
+    println!("{}", exe_path.display());
     let lines_server = reader.lines().fuse();
     for l in lines_server {
         line = l.unwrap();
