@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 use std::fs::File;
 use std::io::prelude::*;
 
-
+const TIMEOUT:u64=60;
 //use std::os::unix::net::SocketAddr;
 
 
@@ -29,6 +29,9 @@ fn create_resultat(status: String, stdout: String, stderr: String) -> Resultat{
     }
 }
 
+fn duration_before_shutdown(stream: &mut TcpStream, time:u64) {
+    stream.set_read_timeout(Some(Duration::new(TIMEOUT, 0))).expect("set_read_timeout call failed");
+}
 /* execute commands and returns results */
 fn execute_commands(command: &str) -> Resultat {
     
