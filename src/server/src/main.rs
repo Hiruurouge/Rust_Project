@@ -111,7 +111,7 @@ fn register(stream: &str){
             if !is_zero(&data){
                 let tmp=to_clean_string(&mut data);
                 let orders:Vec<&str>=tmp.split(":").collect();
-                println!("{:?}",orders);
+                //println!("{:?}",orders);
                 orders_manage(orders,stream.try_clone().unwrap());
             } else {
                 for i in 0..ONLINE.len() {
