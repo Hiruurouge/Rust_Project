@@ -14,3 +14,8 @@ src/beacon/Cargo.lock
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
+src/beacon/target/debug/deps/project-abea89550f920966
+src/beacon/target/debug/.fingerprint/project-abea89550f920966/output-bin-project
+src/beacon/target/debug/project
+src/beacon/target/debug/project.d
+src/beacon/target/.rustc_info.json
