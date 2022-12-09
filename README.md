@@ -1,5 +1,7 @@
 # Rust_Project
 
+AKKI Yacine, DAROUECHE Salim, KOMBILA Joël, RUAU Nicolas
+
 ## Lancement du server
 ```
 cd src/server
